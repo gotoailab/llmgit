@@ -68,3 +68,19 @@ func GetCommitInfo(commit string) (string, error) {
 	return result, nil
 }
 
+// GetStagedFiles 获取暂存区的文件列表
+func GetStagedFiles() ([]string, error) {
+	cmd := exec.Command("git", "diff", "--cached", "--name-only")
+	output, err := cmd.Output()
+	if err != nil {
+		return nil, fmt.Errorf("无法获取暂存区文件列表: %w", err)
+	}
+	
+	if len(output) == 0 {
+		return []string{}, nil
+	}
+	
+	files := strings.Split(strings.TrimSpace(string(output)), "\n")
+	return files, nil
+}
+
