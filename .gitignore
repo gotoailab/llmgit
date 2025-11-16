@@ -1,0 +1,14 @@
+# 编译产物
+llmgit
+*.exe
+*.dll
+*.so
+*.dylib
+build/
+
+# Go 相关
+*.test
+*.out
+go.work
+
+build

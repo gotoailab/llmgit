@@ -1,0 +1,4 @@
+github.com/gotoailab/llmhub v0.0.0-20251116012925-a8c081a52217 h1:cuJONVWjQMCTTQePWskxmLISMXSuMwmUsdIuXEov+Ug=
+github.com/gotoailab/llmhub v0.0.0-20251116012925-a8c081a52217/go.mod h1:2Pa0Z2ZJ9jgpMw9QHk0I4ySiRgjr6GsFay7u58hqoEs=
+github.com/sashabaranov/go-openai v1.20.4 h1:095xQ/fAtRa0+Rj21sezVJABgKfGPNbyx/sAN/hJUmg=
+github.com/sashabaranov/go-openai v1.20.4/go.mod h1:lj5b/K+zjTSFxVLijLSTDZuP7adOgerWeFyZLUhAKRg=
