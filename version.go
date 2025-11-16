@@ -7,7 +7,7 @@ import (
 
 var (
 	// Version is the version of the application
-	Version = "v0.0.1"
+	Version = "v0.0.2"
 	// BuildDate is the date when the binary was built
 	BuildDate = "unknown"
 	// GitCommit is the git commit hash
@@ -27,4 +27,3 @@ Build Information:
   Platform:   %s/%s
 `, Version, BuildDate, GitCommit, GoVersion, runtime.GOOS, runtime.GOARCH)
 }
-
