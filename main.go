@@ -33,6 +33,12 @@ func main() {
 		return
 	}
 
+	// 列出所有支持的 provider（不需要初始化）
+	if command == "providers" || command == "list-providers" {
+		handleProviders()
+		return
+	}
+
 	// 检查是否已初始化
 	cfg, err := config.Load()
 	if err != nil {
@@ -102,6 +108,7 @@ func printUsage() {
 	fmt.Printf("  %s  - %s\n", i18n.T("review_usage"), i18n.T("review_usage_desc"))
 	fmt.Printf("  %s  - %s\n", i18n.T("diff_usage"), i18n.T("diff_usage_desc"))
 	fmt.Printf("  %s  - %s\n", i18n.T("explain_usage"), i18n.T("explain_usage_desc"))
+	fmt.Printf("  %s  - %s\n", i18n.T("providers_usage"), i18n.T("providers_usage_desc"))
 	fmt.Printf("  llmgit <git-command>  - %s\n", i18n.T("git_command_desc"))
 	fmt.Println()
 	fmt.Printf("%s:\n", i18n.T("examples"))
@@ -156,6 +163,13 @@ func handleInit(args []string) {
 		fmt.Printf(i18n.T("init_model")+"\n", model)
 	} else {
 		fmt.Println(i18n.T("init_model_default"))
+	}
+}
+
+func handleProviders() {
+	fmt.Println(i18n.T("providers_title"))
+	for _, p := range llmhub.AllProviders() {
+		fmt.Println(p)
 	}
 }
 

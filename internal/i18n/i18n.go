@@ -69,6 +69,11 @@ var enMessages = map[string]string{
 	"init_model":            "Model: %s",
 	"init_model_default":    "Model: (using default model)",
 
+	// Providers command
+	"providers_usage":       "llmgit providers",
+	"providers_usage_desc":   "List all supported providers",
+	"providers_title":        "Supported providers:",
+
 	// Common errors
 	"error_not_initialized": "Project not initialized, please run 'llmgit init' first",
 	"error_create_client":   "Failed to create LLM client: %v",
@@ -131,6 +136,11 @@ var zhMessages = map[string]string{
 	"init_provider":         "  Provider: %s",
 	"init_model":            "  Model: %s",
 	"init_model_default":   "  Model: (使用默认模型)",
+
+	// Providers command
+	"providers_usage":       "llmgit providers",
+	"providers_usage_desc":   "列出所有支持的 provider",
+	"providers_title":        "支持的 provider:",
 
 	// Common errors
 	"error_not_initialized": "项目未初始化，请先运行 'llmgit init'",
