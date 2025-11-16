@@ -25,6 +25,32 @@ func main() {
 		os.Exit(1)
 	}
 
+	// Check if it's an AI command (starts with "ai")
+	if args[0] == "ai" {
+		if len(args) < 2 {
+			printUsage()
+			os.Exit(1)
+		}
+		handleAICommand(args[1:])
+		return
+	}
+
+	// Check for help command (without ai prefix for convenience)
+	if args[0] == "help" || args[0] == "--help" || args[0] == "-h" {
+		printUsage()
+		return
+	}
+
+	// All other commands are forwarded to git
+	handleGitCommand(args)
+}
+
+func handleAICommand(args []string) {
+	if len(args) < 1 {
+		printUsage()
+		os.Exit(1)
+	}
+
 	command := args[0]
 
 	// 初始化命令
@@ -74,8 +100,9 @@ func main() {
 	case "explain":
 		handleExplain(client, cfg, args[1:])
 	default:
-		// 其他命令直接转发给 git
-		handleGitCommand(args)
+		fmt.Fprintf(os.Stderr, "%s%s: %s\n", i18n.T("error_prefix"), i18n.T("error_unknown_command"), command)
+		fmt.Fprintf(os.Stderr, "%s\n", i18n.T("error_run_help"))
+		os.Exit(1)
 	}
 }
 
@@ -119,15 +146,15 @@ func printUsage() {
 	fmt.Printf("  llmgit <git-command>  - %s\n", i18n.T("git_command_desc"))
 	fmt.Println()
 	fmt.Printf("%s:\n", i18n.T("examples"))
-	fmt.Println("  llmgit init openai sk-xxx gpt-4")
-	fmt.Println("  llmgit commit -a")
+	fmt.Println("  llmgit ai init openai sk-xxx gpt-4")
+	fmt.Println("  llmgit ai commit -a")
 	if i18n.GetLanguage() == i18n.LangZH {
-		fmt.Println("  llmgit commit --lang zh -a                # 使用中文生成 commit message")
+		fmt.Println("  llmgit ai commit --lang zh -a                # 使用中文生成 commit message")
 	} else {
-		fmt.Println("  llmgit commit --lang zh -a                # Generate commit message in Chinese")
+		fmt.Println("  llmgit ai commit --lang zh -a                # Generate commit message in Chinese")
 	}
-	fmt.Println("  llmgit review HEAD")
-	fmt.Println("  llmgit diff")
+	fmt.Println("  llmgit ai review HEAD")
+	fmt.Println("  llmgit ai diff")
 }
 
 func handleInit(args []string) {

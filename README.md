@@ -38,20 +38,20 @@ make install
 Before first use, you need to initialize the configuration:
 
 ```bash
-llmgit init <provider> <api-key> [model]
+llmgit ai init <provider> <api-key> [model]
 ```
 
 Examples:
 
 ```bash
 # Using OpenAI
-llmgit init openai sk-xxx gpt-4
+llmgit ai init openai sk-xxx gpt-4
 
 # Using DeepSeek
-llmgit init deepseek sk-xxx deepseek-chat
+llmgit ai init deepseek sk-xxx deepseek-chat
 
 # Using Qwen
-llmgit init qwen sk-xxx qwen-turbo
+llmgit ai init qwen sk-xxx qwen-turbo
 ```
 
 Supported providers include:
@@ -60,7 +60,7 @@ Supported providers include:
 - `qwen` - Qwen (通义千问)
 - `claude` - Anthropic Claude
 - `gemini` - Google Gemini
-- And more (run `llmgit providers` to see the full list)
+- And more (run `llmgit ai providers` to see the full list)
 
 ## Usage
 
@@ -73,10 +73,10 @@ llmgit supports multiple languages. By default, all output is in English. You ca
 export LLMGIT_LANG=zh
 
 # Or use --lang option (affects only the current command)
-llmgit --lang zh commit
+llmgit --lang zh ai commit
 
 # Or use -l short form
-llmgit -l zh commit
+llmgit -l zh ai commit
 ```
 
 **Supported languages:**
@@ -89,13 +89,13 @@ To see all supported LLM providers:
 
 ```bash
 # List all providers
-llmgit providers
+llmgit ai providers
 
 # Or use alias
-llmgit list-providers
+llmgit ai list-providers
 
 # With Chinese output
-llmgit --lang zh providers
+llmgit --lang zh ai providers
 ```
 
 ### AI Commit Message Generation
@@ -103,16 +103,16 @@ llmgit --lang zh providers
 ```bash
 # Stage files first, then use AI to generate commit message
 git add .
-llmgit commit
+llmgit ai commit
 
 # Generate commit message in Chinese
-llmgit commit --lang zh
+llmgit ai commit --lang zh
 
 # Or use short form
-llmgit commit -l zh
+llmgit ai commit -l zh
 
 # You can also pass additional git commit arguments
-llmgit commit --no-verify
+llmgit ai commit --no-verify
 ```
 
 **Commit Message Format:**
@@ -152,24 +152,24 @@ Note: The `--lang` option for `commit` command only affects the language of the 
 
 ```bash
 # Review the latest commit
-llmgit review
+llmgit ai review
 
 # Review a specific commit
-llmgit review HEAD~1
-llmgit review abc123
+llmgit ai review HEAD~1
+llmgit ai review abc123
 ```
 
 ### AI Diff Explanation
 
 ```bash
 # Explain working directory changes
-llmgit explain
+llmgit ai explain
 
 # Explain changes in a specific file
-llmgit explain src/main.go
+llmgit ai explain src/main.go
 
 # Show diff with AI explanation
-llmgit diff
+llmgit ai diff
 ```
 
 ### Other Git Commands
@@ -222,3 +222,4 @@ This project is based on the [llmhub](https://github.com/gotoailab/llmhub) libra
 ## License
 
 MIT
+

@@ -62,7 +62,7 @@ var enMessages = map[string]string{
 	"help_usage_desc":       "Show this help message",
 
 	// Init command
-	"init_usage":            "llmgit init <provider> <api-key> [model]",
+	"init_usage":            "llmgit ai init <provider> <api-key> [model]",
 	"init_usage_desc":       "Initialize project configuration",
 	"init_supported_providers": "Supported providers:",
 	"init_error_invalid_provider": "Unsupported provider: %s",
@@ -73,12 +73,14 @@ var enMessages = map[string]string{
 	"init_model_default":    "Model: (using default model)",
 
 	// Providers command
-	"providers_usage":       "llmgit providers",
+	"providers_usage":       "llmgit ai providers",
 	"providers_usage_desc":   "List all supported providers",
 	"providers_title":        "Supported providers:",
 
 	// Common errors
-	"error_not_initialized": "Project not initialized, please run 'llmgit init' first",
+	"error_not_initialized": "Project not initialized, please run 'llmgit ai init' first",
+	"error_unknown_command": "Unknown command",
+	"error_run_help":        "Run 'llmgit help' for usage information",
 	"error_create_client":   "Failed to create LLM client: %v",
 	"error_get_changes":     "Failed to get changes: %v",
 	"error_get_commit_info": "Failed to get commit information: %v",
@@ -88,10 +90,10 @@ var enMessages = map[string]string{
 	"error_no_response":     "No response received",
 
 	// Commit command
-	"commit_usage":          "llmgit commit [options]",
+	"commit_usage":          "llmgit ai commit [options]",
 	"commit_usage_desc":     "Generate commit message with AI and commit",
 	"commit_lang_option":    "--lang, -l <lang>",
-	"commit_lang_desc":      "Specify language (en/zh, default: en)",
+	"commit_lang_desc":       "Specify language (en/zh, default: en)",
 	"commit_no_staged":      "No staged changes",
 	"commit_generating":     "Generating commit message with AI...",
 	"commit_generated":      "Generated commit message:",
@@ -99,18 +101,18 @@ var enMessages = map[string]string{
 	"commit_cancelled":      "Cancelled",
 
 	// Review command
-	"review_usage":          "llmgit review [commit]",
+	"review_usage":          "llmgit ai review [commit]",
 	"review_usage_desc":     "Review commit with AI",
 	"review_analyzing":      "Analyzing commit: %s...",
 	"review_result":         "=== AI Review Result ===",
 
 	// Diff command
-	"diff_usage":            "llmgit diff [options]",
+	"diff_usage":            "llmgit ai diff [options]",
 	"diff_usage_desc":       "Show diff with AI explanation",
 	"diff_explanation":      "--- AI Explanation ---",
 
 	// Explain command
-	"explain_usage":         "llmgit explain [file]",
+	"explain_usage":         "llmgit ai explain [file]",
 	"explain_usage_desc":    "Explain file changes with AI",
 	"explain_analyzing_file": "Analyzing file: %s...",
 	"explain_analyzing_workdir": "Analyzing working directory changes...",
@@ -133,7 +135,7 @@ var zhMessages = map[string]string{
 	"help_usage_desc":       "显示帮助信息",
 
 	// Init command
-	"init_usage":            "llmgit init <provider> <api-key> [model]",
+	"init_usage":            "llmgit ai init <provider> <api-key> [model]",
 	"init_usage_desc":       "初始化项目配置",
 	"init_supported_providers": "支持的 provider:",
 	"init_error_invalid_provider": "不支持的 provider: %s",
@@ -144,12 +146,14 @@ var zhMessages = map[string]string{
 	"init_model_default":   "  Model: (使用默认模型)",
 
 	// Providers command
-	"providers_usage":       "llmgit providers",
+	"providers_usage":       "llmgit ai providers",
 	"providers_usage_desc":   "列出所有支持的 provider",
 	"providers_title":        "支持的 provider:",
 
 	// Common errors
-	"error_not_initialized": "项目未初始化，请先运行 'llmgit init'",
+	"error_not_initialized": "项目未初始化，请先运行 'llmgit ai init'",
+	"error_unknown_command": "未知命令",
+	"error_run_help":        "运行 'llmgit help' 查看使用说明",
 	"error_create_client":   "无法创建 LLM 客户端: %v",
 	"error_get_changes":     "无法获取变更: %v",
 	"error_get_commit_info": "无法获取 commit 信息: %v",
@@ -159,10 +163,10 @@ var zhMessages = map[string]string{
 	"error_no_response":     "没有收到响应",
 
 	// Commit command
-	"commit_usage":          "llmgit commit [options]",
+	"commit_usage":          "llmgit ai commit [options]",
 	"commit_usage_desc":     "AI 生成 commit message 并提交",
 	"commit_lang_option":    "--lang, -l <lang>",
-	"commit_lang_desc":      "指定语言 (en/zh, 默认: en)",
+	"commit_lang_desc":       "指定语言 (en/zh, 默认: en)",
 	"commit_no_staged":      "没有暂存的变更",
 	"commit_generating":     "正在使用 AI 生成 commit message...",
 	"commit_generated":      "生成的 commit message:",
@@ -170,18 +174,18 @@ var zhMessages = map[string]string{
 	"commit_cancelled":      "已取消",
 
 	// Review command
-	"review_usage":          "llmgit review [commit]",
+	"review_usage":          "llmgit ai review [commit]",
 	"review_usage_desc":     "AI 审查 commit",
 	"review_analyzing":      "正在分析 commit: %s...",
 	"review_result":         "=== AI 审查结果 ===",
 
 	// Diff command
-	"diff_usage":            "llmgit diff [options]",
+	"diff_usage":            "llmgit ai diff [options]",
 	"diff_usage_desc":       "显示 diff 并 AI 解释",
 	"diff_explanation":      "--- AI 解释 ---",
 
 	// Explain command
-	"explain_usage":         "llmgit explain [file]",
+	"explain_usage":         "llmgit ai explain [file]",
 	"explain_usage_desc":    "AI 语义化解释文件变更",
 	"explain_analyzing_file": "正在分析文件: %s...",
 	"explain_analyzing_workdir": "正在分析工作区变更...",
