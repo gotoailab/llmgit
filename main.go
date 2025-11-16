@@ -71,6 +71,12 @@ func handleAICommand(args []string) {
 		return
 	}
 
+	// 显示版本信息（不需要初始化）
+	if command == "version" {
+		handleVersion()
+		return
+	}
+
 	// 检查是否已初始化
 	cfg, err := config.Load()
 	if err != nil {
@@ -143,6 +149,7 @@ func printUsage() {
 	fmt.Printf("  %s  - %s\n", i18n.T("diff_usage"), i18n.T("diff_usage_desc"))
 	fmt.Printf("  %s  - %s\n", i18n.T("explain_usage"), i18n.T("explain_usage_desc"))
 	fmt.Printf("  %s  - %s\n", i18n.T("providers_usage"), i18n.T("providers_usage_desc"))
+	fmt.Printf("  %s  - %s\n", i18n.T("version_usage"), i18n.T("version_usage_desc"))
 	fmt.Printf("  llmgit <git-command>  - %s\n", i18n.T("git_command_desc"))
 	fmt.Println()
 	fmt.Printf("%s:\n", i18n.T("examples"))
@@ -205,6 +212,10 @@ func handleProviders() {
 	for _, p := range llmhub.AllProviders() {
 		fmt.Println(p)
 	}
+}
+
+func handleVersion() {
+	fmt.Print(GetVersionInfo())
 }
 
 func handleCommit(client *llmhub.Client, cfg *config.Config, args []string) {

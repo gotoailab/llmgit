@@ -7,7 +7,17 @@ BINARY_NAME := llmgit
 # Go 参数
 GO := go
 GOFLAGS := -v
-LDFLAGS := -s -w
+
+# 版本信息
+VERSION := v0.0.1
+BUILD_DATE := $(shell date -u +"%Y-%m-%dT%H:%M:%SZ")
+GIT_COMMIT := $(shell git rev-parse --short HEAD 2>/dev/null || echo "unknown")
+
+# LDFLAGS 包含版本和构建信息
+LDFLAGS := -s -w \
+	-X 'main.Version=$(VERSION)' \
+	-X 'main.BuildDate=$(BUILD_DATE)' \
+	-X 'main.GitCommit=$(GIT_COMMIT)'
 
 # 支持的平台
 PLATFORMS := linux/amd64 linux/arm64 windows/amd64 windows/arm64 darwin/amd64 darwin/arm64
