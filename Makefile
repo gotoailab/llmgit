@@ -9,7 +9,7 @@ GO := go
 GOFLAGS := -v
 
 # 版本信息
-VERSION := v0.0.1
+VERSION := v0.0.2
 BUILD_DATE := $(shell date -u +"%Y-%m-%dT%H:%M:%SZ")
 GIT_COMMIT := $(shell git rev-parse --short HEAD 2>/dev/null || echo "unknown")
 
