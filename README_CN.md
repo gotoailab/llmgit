@@ -7,6 +7,8 @@ llmgit 是一个基于大语言模型的 Git 增强工具，提供智能化的 G
 - 🤖 **AI 生成 Commit Message**: 自动分析代码变更，生成专业的 commit message
 - 🔍 **AI 代码审查**: 使用 AI 审查 commit，发现潜在问题和改进建议
 - 📝 **AI 解释 Diff**: 用通俗易懂的语言解释代码变更的含义
+- 📋 **自动生成 CHANGELOG**: 基于 commit 历史自动生成 CHANGELOG
+- 🔀 **PR/MR 描述生成**: 基于分支差异自动生成 Pull Request 描述
 - 🌍 **国际化支持**: 完整的多语言支持，默认英文，支持中文
 - 🔄 **完全兼容 Git**: 所有原生 Git 命令都可以正常使用
 
@@ -192,6 +194,48 @@ llmgit ai explain src/main.go
 # 显示 diff 并附带 AI 解释
 llmgit ai diff
 ```
+
+### 自动生成 CHANGELOG
+
+```bash
+# 生成自上次 tag 以来的 CHANGELOG
+llmgit ai changelog
+
+# 生成指定范围的 CHANGELOG
+llmgit ai changelog v1.0.0..HEAD
+
+# 生成并保存到文件
+llmgit ai changelog --output CHANGELOG.md
+
+# 生成不同格式
+llmgit ai changelog --format json
+llmgit ai changelog --format yaml
+```
+
+**功能特点:**
+- 自动按类型组织 commit（feat, fix, docs 等）
+- 按版本标签或日期分组
+- 支持 Markdown、JSON 和 YAML 格式
+- 可直接保存到文件
+
+### PR/MR 描述生成
+
+```bash
+# 生成当前分支相对于 main 的 PR 描述
+llmgit ai pr main
+
+# 生成指定分支的 PR 描述
+llmgit ai pr feature-branch --base main
+
+# 生成并复制到剪贴板
+llmgit ai pr main --copy
+```
+
+**功能特点:**
+- 清晰总结变更内容
+- 包含影响范围和测试建议
+- 使用格式化的 PR 模板结构
+- 支持复制到剪贴板（macOS、Linux、Windows）
 
 ### 其他 Git 命令
 

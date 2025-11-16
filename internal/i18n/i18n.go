@@ -91,6 +91,26 @@ var enMessages = map[string]string{
 	"error_read_file":       "Failed to read file %s: %v",
 	"error_save_prompt":     "Failed to save prompt template: %v",
 
+	// Changelog command
+	"changelog_usage":          "llmgit ai changelog [range] [--output file] [--format markdown|json|yaml]",
+	"changelog_usage_desc":     "Auto-generate CHANGELOG from commit history",
+	"changelog_generating":     "Generating CHANGELOG...",
+	"changelog_no_commits":     "No commits found in the specified range",
+	"changelog_saved":          "CHANGELOG saved to %s",
+	"error_get_commits":        "Failed to get commit history: %v",
+	"error_generate_changelog": "Failed to generate CHANGELOG: %v",
+	"error_write_file":         "Failed to write file %s: %v",
+
+	// PR command
+	"pr_usage":              "llmgit ai pr [target-branch] [--base base-branch] [--copy]",
+	"pr_usage_desc":         "Generate Pull Request description",
+	"pr_generating":         "Generating PR description...",
+	"pr_no_changes":         "No changes found between branches",
+	"pr_copied":             "PR description copied to clipboard",
+	"error_get_branch_diff": "Failed to get branch diff: %v",
+	"error_generate_pr":     "Failed to generate PR description: %v",
+	"error_copy_clipboard":  "Failed to copy to clipboard: %v",
+
 	// Common errors
 	"error_not_initialized":      "Project not initialized, please run 'llmgit ai init' first",
 	"error_unknown_command":      "Unknown command",
@@ -177,6 +197,26 @@ var zhMessages = map[string]string{
 	"prompt_saved":          "Commit prompt 模板已保存",
 	"error_read_file":       "无法读取文件 %s: %v",
 	"error_save_prompt":     "无法保存 prompt 模板: %v",
+
+	// Changelog command
+	"changelog_usage":          "llmgit ai changelog [范围] [--output 文件] [--format markdown|json|yaml]",
+	"changelog_usage_desc":     "基于 commit 历史自动生成 CHANGELOG",
+	"changelog_generating":     "正在生成 CHANGELOG...",
+	"changelog_no_commits":     "指定范围内没有找到 commit",
+	"changelog_saved":          "CHANGELOG 已保存到 %s",
+	"error_get_commits":        "无法获取 commit 历史: %v",
+	"error_generate_changelog": "无法生成 CHANGELOG: %v",
+	"error_write_file":         "无法写入文件 %s: %v",
+
+	// PR command
+	"pr_usage":              "llmgit ai pr [目标分支] [--base 基础分支] [--copy]",
+	"pr_usage_desc":         "生成 Pull Request 描述",
+	"pr_generating":         "正在生成 PR 描述...",
+	"pr_no_changes":         "分支之间没有变更",
+	"pr_copied":             "PR 描述已复制到剪贴板",
+	"error_get_branch_diff": "无法获取分支差异: %v",
+	"error_generate_pr":     "无法生成 PR 描述: %v",
+	"error_copy_clipboard":  "无法复制到剪贴板: %v",
 
 	// Common errors
 	"error_not_initialized":      "项目未初始化，请先运行 'llmgit ai init'",

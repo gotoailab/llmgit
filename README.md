@@ -9,6 +9,8 @@ llmgit is a Git enhancement tool powered by large language models, providing an 
 - 🤖 **AI Commit Message Generation**: Automatically analyze code changes and generate professional commit messages
 - 🔍 **AI Code Review**: Use AI to review commits, identify potential issues and improvement suggestions
 - 📝 **AI Diff Explanation**: Explain code changes in plain language
+- 📋 **Auto-generate CHANGELOG**: Generate CHANGELOG automatically from commit history
+- 🔀 **PR/MR Description Generation**: Auto-generate Pull Request descriptions based on branch differences
 - 🌍 **Internationalization**: Full i18n support with English (default) and Chinese
 - 🔄 **Full Git Compatibility**: All native Git commands work normally
 
@@ -194,6 +196,48 @@ llmgit ai explain src/main.go
 # Show diff with AI explanation
 llmgit ai diff
 ```
+
+### Auto-generate CHANGELOG
+
+```bash
+# Generate CHANGELOG since last tag
+llmgit ai changelog
+
+# Generate CHANGELOG for specified range
+llmgit ai changelog v1.0.0..HEAD
+
+# Generate and save to file
+llmgit ai changelog --output CHANGELOG.md
+
+# Generate in different formats
+llmgit ai changelog --format json
+llmgit ai changelog --format yaml
+```
+
+**Features:**
+- Automatically organizes commits by type (feat, fix, docs, etc.)
+- Groups by version tags or dates
+- Supports Markdown, JSON, and YAML formats
+- Can save directly to file
+
+### PR/MR Description Generation
+
+```bash
+# Generate PR description for current branch vs main
+llmgit ai pr main
+
+# Generate PR description for specified branch
+llmgit ai pr feature-branch --base main
+
+# Generate and copy to clipboard
+llmgit ai pr main --copy
+```
+
+**Features:**
+- Summarizes changes clearly
+- Includes impact scope and testing suggestions
+- Uses formatted PR template structure
+- Supports copying to clipboard (macOS, Linux, Windows)
 
 ### Other Git Commands
 

@@ -84,6 +84,48 @@ func handleAICommand(args []string) {
 		return
 	}
 
+	// CHANGELOG 生成（需要初始化）
+	if command == "changelog" {
+		// 检查是否已初始化
+		cfg, err := config.Load()
+		if err != nil {
+			fmt.Fprintf(os.Stderr, "%s%s\n", i18n.T("error_prefix"), i18n.T("error_not_initialized"))
+			os.Exit(1)
+		}
+		client, err := llmhub.NewClient(llmhub.ClientConfig{
+			APIKey:   cfg.APIKey,
+			Provider: llmhub.Provider(cfg.Provider),
+			Model:    cfg.Model,
+		})
+		if err != nil {
+			fmt.Fprintf(os.Stderr, "%s%s\n", i18n.T("error_prefix"), fmt.Sprintf(i18n.T("error_create_client"), err))
+			os.Exit(1)
+		}
+		handleChangelog(client, args[1:])
+		return
+	}
+
+	// PR 描述生成（需要初始化）
+	if command == "pr" {
+		// 检查是否已初始化
+		cfg, err := config.Load()
+		if err != nil {
+			fmt.Fprintf(os.Stderr, "%s%s\n", i18n.T("error_prefix"), i18n.T("error_not_initialized"))
+			os.Exit(1)
+		}
+		client, err := llmhub.NewClient(llmhub.ClientConfig{
+			APIKey:   cfg.APIKey,
+			Provider: llmhub.Provider(cfg.Provider),
+			Model:    cfg.Model,
+		})
+		if err != nil {
+			fmt.Fprintf(os.Stderr, "%s%s\n", i18n.T("error_prefix"), fmt.Sprintf(i18n.T("error_create_client"), err))
+			os.Exit(1)
+		}
+		handlePR(client, args[1:])
+		return
+	}
+
 	// 检查是否已初始化
 	cfg, err := config.Load()
 	if err != nil {
@@ -158,6 +200,8 @@ func printUsage() {
 	fmt.Printf("  %s  - %s\n", i18n.T("providers_usage"), i18n.T("providers_usage_desc"))
 	fmt.Printf("  %s  - %s\n", i18n.T("version_usage"), i18n.T("version_usage_desc"))
 	fmt.Printf("  %s  - %s\n", i18n.T("set_prompt_usage"), i18n.T("set_prompt_usage_desc"))
+	fmt.Printf("  %s  - %s\n", i18n.T("changelog_usage"), i18n.T("changelog_usage_desc"))
+	fmt.Printf("  %s  - %s\n", i18n.T("pr_usage"), i18n.T("pr_usage_desc"))
 	fmt.Printf("  llmgit <git-command>  - %s\n", i18n.T("git_command_desc"))
 	fmt.Println()
 	fmt.Printf("%s:\n", i18n.T("examples"))
@@ -270,6 +314,138 @@ func handleSetPrompt(args []string) {
 	}
 
 	fmt.Println(i18n.T("prompt_saved"))
+}
+
+func handleChangelog(client *llmhub.Client, args []string) {
+	// 解析参数
+	var rangeSpec string
+	var outputFile string
+	var format string = "markdown"
+
+	for i := 0; i < len(args); i++ {
+		arg := args[i]
+		if arg == "--output" || arg == "-o" {
+			if i+1 < len(args) {
+				outputFile = args[i+1]
+				i++
+			}
+		} else if arg == "--format" || arg == "-f" {
+			if i+1 < len(args) {
+				format = args[i+1]
+				i++
+			}
+		} else if !strings.HasPrefix(arg, "--") {
+			rangeSpec = arg
+		}
+	}
+
+	// 如果没有指定范围，尝试获取自上次 tag 以来的 commits
+	if rangeSpec == "" {
+		lastTag, err := git.GetLastTag()
+		if err == nil && lastTag != "" {
+			rangeSpec = fmt.Sprintf("%s..HEAD", lastTag)
+		}
+	}
+
+	// 获取 commit 历史
+	commitLog, err := git.GetCommitLog(rangeSpec)
+	if err != nil {
+		fmt.Fprintf(os.Stderr, "%s%s\n", i18n.T("error_prefix"), fmt.Sprintf(i18n.T("error_get_commits"), err))
+		os.Exit(1)
+	}
+
+	if commitLog == "" {
+		fmt.Println(i18n.T("changelog_no_commits"))
+		return
+	}
+
+	// 使用 AI 生成 CHANGELOG
+	fmt.Println(i18n.T("changelog_generating"))
+	ctx := context.Background()
+	changelog, err := generateChangelog(ctx, client, commitLog, format)
+	if err != nil {
+		fmt.Fprintf(os.Stderr, "%s%s\n", i18n.T("error_prefix"), fmt.Sprintf(i18n.T("error_generate_changelog"), err))
+		os.Exit(1)
+	}
+
+	// 输出或保存到文件
+	if outputFile != "" {
+		err := os.WriteFile(outputFile, []byte(changelog), 0644)
+		if err != nil {
+			fmt.Fprintf(os.Stderr, "%s%s\n", i18n.T("error_prefix"), fmt.Sprintf(i18n.T("error_write_file"), outputFile, err))
+			os.Exit(1)
+		}
+		fmt.Printf(i18n.T("changelog_saved")+"\n", outputFile)
+	} else {
+		fmt.Println(changelog)
+	}
+}
+
+func handlePR(client *llmhub.Client, args []string) {
+	// 解析参数
+	var baseBranch string = "main"
+	var targetBranch string = "HEAD"
+	var copyToClipboard bool = false
+
+	for i := 0; i < len(args); i++ {
+		arg := args[i]
+		if arg == "--base" || arg == "-b" {
+			if i+1 < len(args) {
+				baseBranch = args[i+1]
+				i++
+			}
+		} else if arg == "--copy" || arg == "-c" {
+			copyToClipboard = true
+		} else if !strings.HasPrefix(arg, "--") {
+			if targetBranch == "HEAD" {
+				targetBranch = arg
+			} else {
+				baseBranch = arg
+			}
+		}
+	}
+
+	// 获取分支差异
+	diff, err := git.GetBranchDiffFull(baseBranch, targetBranch)
+	if err != nil {
+		fmt.Fprintf(os.Stderr, "%s%s\n", i18n.T("error_prefix"), fmt.Sprintf(i18n.T("error_get_branch_diff"), err))
+		os.Exit(1)
+	}
+
+	if diff == "" {
+		fmt.Println(i18n.T("pr_no_changes"))
+		return
+	}
+
+	// 获取 commit 列表
+	commits, err := git.GetBranchCommits(baseBranch, targetBranch)
+	if err != nil {
+		fmt.Fprintf(os.Stderr, "%s%s\n", i18n.T("error_prefix"), fmt.Sprintf(i18n.T("error_get_commits"), err))
+		os.Exit(1)
+	}
+
+	// 使用 AI 生成 PR 描述
+	fmt.Println(i18n.T("pr_generating"))
+	ctx := context.Background()
+	prDesc, err := generatePRDescription(ctx, client, baseBranch, targetBranch, commits, diff)
+	if err != nil {
+		fmt.Fprintf(os.Stderr, "%s%s\n", i18n.T("error_prefix"), fmt.Sprintf(i18n.T("error_generate_pr"), err))
+		os.Exit(1)
+	}
+
+	// 输出或复制到剪贴板
+	if copyToClipboard {
+		// 尝试复制到剪贴板（需要系统支持）
+		err := copyToClipboardFunc(prDesc)
+		if err != nil {
+			fmt.Println(prDesc)
+			fmt.Fprintf(os.Stderr, "\n%s%s\n", i18n.T("error_prefix"), fmt.Sprintf(i18n.T("error_copy_clipboard"), err))
+		} else {
+			fmt.Println(i18n.T("pr_copied"))
+		}
+	} else {
+		fmt.Println(prDesc)
+	}
 }
 
 func handleCommit(client *llmhub.Client, cfg *config.Config, args []string) {
@@ -861,6 +1037,126 @@ func cleanCommitMessage(message string) string {
 	}
 
 	return result
+}
+
+// generateChangelog 使用 AI 生成 CHANGELOG
+func generateChangelog(ctx context.Context, client *llmhub.Client, commitLog string, format string) (string, error) {
+	lang := i18n.GetLanguage()
+	languageInstruction := "Use English"
+	if lang == i18n.LangZH {
+		languageInstruction = "Use Chinese"
+	}
+
+	formatInstruction := "Markdown format"
+	if format == "json" {
+		formatInstruction = "JSON format"
+	} else if format == "yaml" {
+		formatInstruction = "YAML format"
+	}
+
+	prompt := fmt.Sprintf(`Generate a CHANGELOG based on the following commit history. The commits are in the format: <commit-hash>|<subject>|<author>|<date>
+
+Requirements:
+1. %s
+2. %s
+3. Organize commits by type (feat, fix, docs, style, refactor, perf, test, build, ci, chore, revert)
+4. Group by version if version tags are present, otherwise group by date
+5. Include commit subject and author for each entry
+6. Use clear and concise descriptions
+
+Commit history:
+%s
+
+Generate a well-formatted CHANGELOG.`, languageInstruction, formatInstruction, commitLog)
+
+	resp, err := client.ChatCompletions(ctx, llmhub.ChatCompletionRequest{
+		Messages: []llmhub.ChatMessage{
+			{Role: "user", Content: prompt},
+		},
+		Temperature: floatPtr(0.7),
+		MaxTokens:   intPtr(2000),
+	})
+	if err != nil {
+		return "", err
+	}
+
+	if len(resp.Choices) == 0 {
+		return "", fmt.Errorf(i18n.T("error_no_response"))
+	}
+
+	changelog := strings.TrimSpace(getContent(resp.Choices[0].Message.Content))
+	return changelog, nil
+}
+
+// generatePRDescription 使用 AI 生成 PR 描述
+func generatePRDescription(ctx context.Context, client *llmhub.Client, baseBranch, targetBranch, commits, diff string) (string, error) {
+	lang := i18n.GetLanguage()
+	languageInstruction := "Use English"
+	if lang == i18n.LangZH {
+		languageInstruction = "Use Chinese"
+	}
+
+	prompt := fmt.Sprintf(`Generate a Pull Request description based on the following information.
+
+Requirements:
+1. %s
+2. Summarize the changes clearly
+3. Include impact scope and testing suggestions
+4. Use a formatted PR template structure
+5. Be concise but comprehensive
+
+Base branch: %s
+Target branch: %s
+
+Commits (format: <hash>|<subject>|<author>|<date>):
+%s
+
+Code changes (diff stat):
+%s
+
+Generate a professional PR description.`, languageInstruction, baseBranch, targetBranch, commits, diff)
+
+	resp, err := client.ChatCompletions(ctx, llmhub.ChatCompletionRequest{
+		Messages: []llmhub.ChatMessage{
+			{Role: "user", Content: prompt},
+		},
+		Temperature: floatPtr(0.7),
+		MaxTokens:   intPtr(1500),
+	})
+	if err != nil {
+		return "", err
+	}
+
+	if len(resp.Choices) == 0 {
+		return "", fmt.Errorf(i18n.T("error_no_response"))
+	}
+
+	prDesc := strings.TrimSpace(getContent(resp.Choices[0].Message.Content))
+	return prDesc, nil
+}
+
+// copyToClipboardFunc 复制文本到剪贴板（跨平台）
+func copyToClipboardFunc(text string) error {
+	// 检测系统并执行相应的复制命令
+	var cmd *exec.Cmd
+	if _, err := exec.LookPath("pbcopy"); err == nil {
+		// macOS
+		cmd = exec.Command("pbcopy")
+	} else if _, err := exec.LookPath("xclip"); err == nil {
+		// Linux with xclip
+		cmd = exec.Command("xclip", "-selection", "clipboard")
+	} else if _, err := exec.LookPath("xsel"); err == nil {
+		// Linux with xsel
+		cmd = exec.Command("xsel", "--clipboard", "--input")
+	} else if _, err := exec.LookPath("clip.exe"); err == nil {
+		// Windows
+		cmd = exec.Command("clip.exe")
+	} else {
+		return fmt.Errorf("no clipboard utility found")
+	}
+
+	cmd.Stdin = strings.NewReader(text)
+	return cmd.Run()
 }
 
 func reviewCommit(ctx context.Context, client *llmhub.Client, commitInfo string) (string, error) {

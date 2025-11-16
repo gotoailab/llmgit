@@ -84,3 +84,61 @@ func GetStagedFiles() ([]string, error) {
 	return files, nil
 }
 
+// GetCommitLog 获取指定范围的 commit 历史
+func GetCommitLog(rangeSpec string) (string, error) {
+	args := []string{"log", "--pretty=format:%H|%s|%an|%ad", "--date=short"}
+	if rangeSpec != "" {
+		args = append(args, rangeSpec)
+	} else {
+		// 如果没有指定范围，获取自上次 tag 以来的 commits
+		args = append(args, "--no-merges")
+	}
+	cmd := exec.Command("git", args...)
+	output, err := cmd.Output()
+	if err != nil {
+		return "", fmt.Errorf("无法获取 commit 历史: %w", err)
+	}
+	return strings.TrimSpace(string(output)), nil
+}
+
+// GetLastTag 获取最后一个 tag
+func GetLastTag() (string, error) {
+	cmd := exec.Command("git", "describe", "--tags", "--abbrev=0")
+	output, err := cmd.Output()
+	if err != nil {
+		// 如果没有 tag，返回空字符串
+		return "", nil
+	}
+	return strings.TrimSpace(string(output)), nil
+}
+
+// GetBranchDiff 获取两个分支之间的差异
+func GetBranchDiff(baseBranch, targetBranch string) (string, error) {
+	cmd := exec.Command("git", "diff", "--stat", fmt.Sprintf("%s..%s", baseBranch, targetBranch))
+	output, err := cmd.Output()
+	if err != nil {
+		return "", fmt.Errorf("无法获取分支差异: %w", err)
+	}
+	return strings.TrimSpace(string(output)), nil
+}
+
+// GetBranchDiffFull 获取两个分支之间的完整 diff
+func GetBranchDiffFull(baseBranch, targetBranch string) (string, error) {
+	cmd := exec.Command("git", "diff", fmt.Sprintf("%s..%s", baseBranch, targetBranch))
+	output, err := cmd.Output()
+	if err != nil {
+		return "", fmt.Errorf("无法获取分支完整差异: %w", err)
+	}
+	return strings.TrimSpace(string(output)), nil
+}
+
+// GetBranchCommits 获取两个分支之间的 commit 列表
+func GetBranchCommits(baseBranch, targetBranch string) (string, error) {
+	cmd := exec.Command("git", "log", "--pretty=format:%H|%s|%an|%ad", "--date=short", fmt.Sprintf("%s..%s", baseBranch, targetBranch), "--no-merges")
+	output, err := cmd.Output()
+	if err != nil {
+		return "", fmt.Errorf("无法获取分支 commit 列表: %w", err)
+	}
+	return strings.TrimSpace(string(output)), nil
+}
+
