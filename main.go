@@ -77,6 +77,12 @@ func handleAICommand(args []string) {
 		return
 	}
 
+	// 设置 commit prompt（需要先初始化）
+	if command == "set-prompt" {
+		handleSetPrompt(args[1:])
+		return
+	}
+
 	// 检查是否已初始化
 	cfg, err := config.Load()
 	if err != nil {
@@ -150,6 +156,7 @@ func printUsage() {
 	fmt.Printf("  %s  - %s\n", i18n.T("explain_usage"), i18n.T("explain_usage_desc"))
 	fmt.Printf("  %s  - %s\n", i18n.T("providers_usage"), i18n.T("providers_usage_desc"))
 	fmt.Printf("  %s  - %s\n", i18n.T("version_usage"), i18n.T("version_usage_desc"))
+	fmt.Printf("  %s  - %s\n", i18n.T("set_prompt_usage"), i18n.T("set_prompt_usage_desc"))
 	fmt.Printf("  llmgit <git-command>  - %s\n", i18n.T("git_command_desc"))
 	fmt.Println()
 	fmt.Printf("%s:\n", i18n.T("examples"))
@@ -218,6 +225,52 @@ func handleVersion() {
 	fmt.Print(GetVersionInfo())
 }
 
+func handleSetPrompt(args []string) {
+	// 检查是否已初始化
+	cfg, err := config.Load()
+	if err != nil {
+		fmt.Fprintf(os.Stderr, "%s%s\n", i18n.T("error_prefix"), i18n.T("error_not_initialized"))
+		os.Exit(1)
+	}
+
+	if len(args) == 0 {
+		// 显示当前 prompt
+		if cfg.CommitPrompt != "" {
+			fmt.Println(i18n.T("prompt_current"))
+			fmt.Println(cfg.CommitPrompt)
+		} else {
+			fmt.Println(i18n.T("prompt_not_set"))
+			fmt.Println(i18n.T("prompt_usage"))
+		}
+		return
+	}
+
+	// 设置 prompt
+	// 支持从文件读取或直接输入
+	prompt := strings.Join(args, " ")
+
+	// 如果参数是文件路径，读取文件内容
+	if len(args) == 1 {
+		if _, err := os.Stat(args[0]); err == nil {
+			// 文件存在，读取文件内容
+			data, err := os.ReadFile(args[0])
+			if err != nil {
+				fmt.Fprintf(os.Stderr, "%s%s\n", i18n.T("error_prefix"), fmt.Sprintf(i18n.T("error_read_file"), args[0], err))
+				os.Exit(1)
+			}
+			prompt = strings.TrimSpace(string(data))
+		}
+	}
+
+	cfg.CommitPrompt = prompt
+	if err := config.Save(cfg); err != nil {
+		fmt.Fprintf(os.Stderr, "%s%s\n", i18n.T("error_prefix"), fmt.Sprintf(i18n.T("error_save_prompt"), err))
+		os.Exit(1)
+	}
+
+	fmt.Println(i18n.T("prompt_saved"))
+}
+
 func handleCommit(client *llmhub.Client, cfg *config.Config, args []string) {
 	// 检查是否已经有 -m 参数（用户自己提供了 message）
 	hasMessage := false
@@ -273,7 +326,7 @@ func handleCommit(client *llmhub.Client, cfg *config.Config, args []string) {
 	// 使用 AI 生成 commit message
 	fmt.Println(i18n.T("commit_generating"))
 	ctx := context.Background()
-	message, err := generateCommitMessage(ctx, client, diff, lang)
+	message, err := generateCommitMessage(ctx, client, diff, lang, cfg)
 	if err != nil {
 		fmt.Fprintf(os.Stderr, "%s%s\n", i18n.T("error_prefix"), fmt.Sprintf(i18n.T("error_generate_message"), err))
 		os.Exit(1)
@@ -411,14 +464,23 @@ func handleGitCommand(args []string) {
 	}
 }
 
-func generateCommitMessage(ctx context.Context, client *llmhub.Client, diff string, lang string) (string, error) {
+func generateCommitMessage(ctx context.Context, client *llmhub.Client, diff string, lang string, cfg *config.Config) (string, error) {
 	// 确定语言和提示词
 	languageInstruction := "Use English"
 	if lang == "zh" || lang == "cn" || lang == "chinese" {
 		languageInstruction = "Use Chinese"
 	}
 
-	prompt := fmt.Sprintf(`You are a professional Git commit message generator. Please generate a concise and clear commit message based on the following code changes.
+	var prompt string
+	if cfg.CommitPrompt != "" {
+		// 使用自定义 prompt 模板
+		// 支持占位符: {language}, {diff}
+		prompt = cfg.CommitPrompt
+		prompt = strings.ReplaceAll(prompt, "{language}", languageInstruction)
+		prompt = strings.ReplaceAll(prompt, "{diff}", diff)
+	} else {
+		// 使用默认 prompt
+		prompt = fmt.Sprintf(`You are a professional Git commit message generator. Please generate a concise and clear commit message based on the following code changes.
 
 Requirements:
 1. %s
@@ -433,6 +495,7 @@ Code changes:
 %s
 
 Please return only the commit message, without any additional explanation.`, languageInstruction, diff)
+	}
 
 	resp, err := client.ChatCompletions(ctx, llmhub.ChatCompletionRequest{
 		Messages: []llmhub.ChatMessage{

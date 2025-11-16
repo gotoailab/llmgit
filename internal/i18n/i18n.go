@@ -81,6 +81,16 @@ var enMessages = map[string]string{
 	"version_usage":      "llmgit ai version",
 	"version_usage_desc": "Show version and build information",
 
+	// Set prompt command
+	"set_prompt_usage":      "llmgit ai set-prompt [prompt|file]",
+	"set_prompt_usage_desc": "Set custom commit message prompt template",
+	"prompt_current":        "Current commit prompt template:",
+	"prompt_not_set":        "No custom commit prompt template set. Using default template.",
+	"prompt_usage":          "Usage: llmgit ai set-prompt \"<template>\" or llmgit ai set-prompt <file>",
+	"prompt_saved":          "Commit prompt template saved successfully",
+	"error_read_file":       "Failed to read file %s: %v",
+	"error_save_prompt":     "Failed to save prompt template: %v",
+
 	// Common errors
 	"error_not_initialized":      "Project not initialized, please run 'llmgit ai init' first",
 	"error_unknown_command":      "Unknown command",
@@ -157,6 +167,16 @@ var zhMessages = map[string]string{
 	// Version command
 	"version_usage":      "llmgit ai version",
 	"version_usage_desc": "显示版本和构建信息",
+
+	// Set prompt command
+	"set_prompt_usage":      "llmgit ai set-prompt [prompt|file]",
+	"set_prompt_usage_desc": "设置自定义 commit message prompt 模板",
+	"prompt_current":        "当前 commit prompt 模板:",
+	"prompt_not_set":        "未设置自定义 commit prompt 模板，使用默认模板。",
+	"prompt_usage":          "用法: llmgit ai set-prompt \"<模板>\" 或 llmgit ai set-prompt <文件>",
+	"prompt_saved":          "Commit prompt 模板已保存",
+	"error_read_file":       "无法读取文件 %s: %v",
+	"error_save_prompt":     "无法保存 prompt 模板: %v",
 
 	// Common errors
 	"error_not_initialized":      "项目未初始化，请先运行 'llmgit ai init'",

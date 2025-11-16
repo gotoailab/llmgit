@@ -9,9 +9,10 @@ import (
 
 // Config 项目配置
 type Config struct {
-	Provider string `json:"provider"`
-	APIKey   string `json:"api_key"`
-	Model    string `json:"model"`
+	Provider     string `json:"provider"`
+	APIKey       string `json:"api_key"`
+	Model        string `json:"model"`
+	CommitPrompt string `json:"commit_prompt,omitempty"` // 自定义 commit prompt 模板
 }
 
 const configDirName = ".llmgit"
