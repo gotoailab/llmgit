@@ -9,27 +9,34 @@ import (
 
 	"github.com/gotoailab/llmgit/internal/config"
 	"github.com/gotoailab/llmgit/internal/git"
+	"github.com/gotoailab/llmgit/internal/i18n"
 	"github.com/gotoailab/llmhub"
 )
 
 func main() {
-	if len(os.Args) < 2 {
+	// Initialize i18n (default to English)
+	i18n.InitLanguage()
+
+	// Parse global language option if present
+	args := parseGlobalLangOption(os.Args[1:])
+
+	if len(args) < 1 {
 		printUsage()
 		os.Exit(1)
 	}
 
-	command := os.Args[1]
+	command := args[0]
 
 	// 初始化命令
 	if command == "init" {
-		handleInit()
+		handleInit(args[1:])
 		return
 	}
 
 	// 检查是否已初始化
 	cfg, err := config.Load()
 	if err != nil {
-		fmt.Fprintf(os.Stderr, "错误: 项目未初始化，请先运行 'llmgit init'\n")
+		fmt.Fprintf(os.Stderr, "%s%s\n", i18n.T("error_prefix"), i18n.T("error_not_initialized"))
 		os.Exit(1)
 	}
 
@@ -40,66 +47,95 @@ func main() {
 		Model:    cfg.Model,
 	})
 	if err != nil {
-		fmt.Fprintf(os.Stderr, "错误: 无法创建 LLM 客户端: %v\n", err)
+		fmt.Fprintf(os.Stderr, "%s%s\n", i18n.T("error_prefix"), fmt.Sprintf(i18n.T("error_create_client"), err))
 		os.Exit(1)
 	}
 
 	// 处理特殊命令
 	switch command {
 	case "commit":
-		handleCommit(client, cfg, os.Args[2:])
+		handleCommit(client, cfg, args[1:])
 	case "review":
-		handleReview(client, cfg, os.Args[2:])
+		handleReview(client, cfg, args[1:])
 	case "diff":
-		handleDiff(client, cfg, os.Args[2:])
+		handleDiff(client, cfg, args[1:])
 	case "explain":
-		handleExplain(client, cfg, os.Args[2:])
+		handleExplain(client, cfg, args[1:])
 	default:
 		// 其他命令直接转发给 git
-		handleGitCommand(os.Args[1:])
+		handleGitCommand(args)
 	}
 }
 
+// parseGlobalLangOption parses --lang global option and returns remaining args
+func parseGlobalLangOption(args []string) []string {
+	result := []string{}
+	skipNext := false
+	for i, arg := range args {
+		if skipNext {
+			skipNext = false
+			continue
+		}
+		if arg == "--lang" || arg == "-l" {
+			if i+1 < len(args) {
+				i18n.SetLanguage(args[i+1])
+				skipNext = true
+				continue
+			}
+		} else if strings.HasPrefix(arg, "--lang=") {
+			lang := strings.TrimPrefix(arg, "--lang=")
+			i18n.SetLanguage(lang)
+		} else {
+			result = append(result, arg)
+		}
+	}
+	return result
+}
+
 func printUsage() {
-	fmt.Println("llmgit - AI 增强的 Git 工具")
+	fmt.Println(i18n.T("app_name"))
 	fmt.Println()
-	fmt.Println("用法:")
-	fmt.Println("  llmgit init <provider> <api-key> [model]  - 初始化项目配置")
-	fmt.Println("  llmgit commit [options]                   - AI 生成 commit message 并提交")
-	fmt.Println("    --lang, -l <lang>                       - 指定语言 (en/zh, 默认: en)")
-	fmt.Println("  llmgit review [commit]                    - AI 审查 commit")
-	fmt.Println("  llmgit diff [options]                     - 显示 diff 并 AI 解释")
-	fmt.Println("  llmgit explain [file]                    - AI 语义化解释文件变更")
-	fmt.Println("  llmgit <git-command>                      - 执行其他 git 命令")
+	fmt.Printf("%s:\n", i18n.T("usage"))
+	fmt.Printf("  %s  - %s\n", i18n.T("init_usage"), i18n.T("init_usage_desc"))
+	fmt.Printf("  %s  - %s\n", i18n.T("commit_usage"), i18n.T("commit_usage_desc"))
+	fmt.Printf("    %s  - %s\n", i18n.T("commit_lang_option"), i18n.T("commit_lang_desc"))
+	fmt.Printf("  %s  - %s\n", i18n.T("review_usage"), i18n.T("review_usage_desc"))
+	fmt.Printf("  %s  - %s\n", i18n.T("diff_usage"), i18n.T("diff_usage_desc"))
+	fmt.Printf("  %s  - %s\n", i18n.T("explain_usage"), i18n.T("explain_usage_desc"))
+	fmt.Printf("  llmgit <git-command>  - %s\n", i18n.T("git_command_desc"))
 	fmt.Println()
-	fmt.Println("示例:")
+	fmt.Printf("%s:\n", i18n.T("examples"))
 	fmt.Println("  llmgit init openai sk-xxx gpt-4")
 	fmt.Println("  llmgit commit -a")
-	fmt.Println("  llmgit commit --lang zh -a                # 使用中文生成 commit message")
+	if i18n.GetLanguage() == i18n.LangZH {
+		fmt.Println("  llmgit commit --lang zh -a                # 使用中文生成 commit message")
+	} else {
+		fmt.Println("  llmgit commit --lang zh -a                # Generate commit message in Chinese")
+	}
 	fmt.Println("  llmgit review HEAD")
 	fmt.Println("  llmgit diff")
 }
 
-func handleInit() {
-	if len(os.Args) < 4 {
-		fmt.Fprintf(os.Stderr, "用法: llmgit init <provider> <api-key> [model]\n")
-		fmt.Fprintf(os.Stderr, "\n支持的 provider:\n")
+func handleInit(args []string) {
+	if len(args) < 2 {
+		fmt.Fprintf(os.Stderr, "%s: %s\n", i18n.T("usage"), i18n.T("init_usage"))
+		fmt.Fprintf(os.Stderr, "\n%s\n", i18n.T("init_supported_providers"))
 		for _, p := range llmhub.AllProviders() {
 			fmt.Fprintf(os.Stderr, "  - %s\n", p)
 		}
 		os.Exit(1)
 	}
 
-	provider := os.Args[2]
-	apiKey := os.Args[3]
+	provider := args[0]
+	apiKey := args[1]
 	model := ""
-	if len(os.Args) > 4 {
-		model = os.Args[4]
+	if len(args) > 2 {
+		model = args[2]
 	}
 
 	// 验证 provider
 	if !llmhub.Provider(provider).IsValid() {
-		fmt.Fprintf(os.Stderr, "错误: 不支持的 provider: %s\n", provider)
+		fmt.Fprintf(os.Stderr, "%s%s\n", i18n.T("error_prefix"), fmt.Sprintf(i18n.T("init_error_invalid_provider"), provider))
 		os.Exit(1)
 	}
 
@@ -110,16 +146,16 @@ func handleInit() {
 	}
 
 	if err := config.Save(cfg); err != nil {
-		fmt.Fprintf(os.Stderr, "错误: 无法保存配置: %v\n", err)
+		fmt.Fprintf(os.Stderr, "%s%s\n", i18n.T("error_prefix"), fmt.Sprintf(i18n.T("init_error_save_failed"), err))
 		os.Exit(1)
 	}
 
-	fmt.Printf("✓ 配置已保存到 ~/.llmgit/config.json\n")
-	fmt.Printf("  Provider: %s\n", provider)
+	fmt.Println(i18n.T("init_success"))
+	fmt.Printf(i18n.T("init_provider")+"\n", provider)
 	if model != "" {
-		fmt.Printf("  Model: %s\n", model)
+		fmt.Printf(i18n.T("init_model")+"\n", model)
 	} else {
-		fmt.Printf("  Model: (使用默认模型)\n")
+		fmt.Println(i18n.T("init_model_default"))
 	}
 }
 
@@ -166,25 +202,25 @@ func handleCommit(client *llmhub.Client, cfg *config.Config, args []string) {
 	// 获取暂存区的变更
 	diff, err := git.GetStagedDiff()
 	if err != nil {
-		fmt.Fprintf(os.Stderr, "错误: 无法获取变更: %v\n", err)
+		fmt.Fprintf(os.Stderr, "%s%s\n", i18n.T("error_prefix"), fmt.Sprintf(i18n.T("error_get_changes"), err))
 		os.Exit(1)
 	}
 
 	if diff == "" {
-		fmt.Println("没有暂存的变更")
+		fmt.Println(i18n.T("commit_no_staged"))
 		os.Exit(0)
 	}
 
 	// 使用 AI 生成 commit message
-	fmt.Println("正在使用 AI 生成 commit message...")
+	fmt.Println(i18n.T("commit_generating"))
 	ctx := context.Background()
 	message, err := generateCommitMessage(ctx, client, diff, lang)
 	if err != nil {
-		fmt.Fprintf(os.Stderr, "错误: 无法生成 commit message: %v\n", err)
+		fmt.Fprintf(os.Stderr, "%s%s\n", i18n.T("error_prefix"), fmt.Sprintf(i18n.T("error_generate_message"), err))
 		os.Exit(1)
 	}
 
-	fmt.Printf("\n生成的 commit message:\n\n%s\n\n", message)
+	fmt.Printf("\n%s\n\n%s\n\n", i18n.T("commit_generated"), message)
 
 	// 检查是否有 --no-edit 参数（跳过确认）
 	skipConfirm := false
@@ -197,11 +233,11 @@ func handleCommit(client *llmhub.Client, cfg *config.Config, args []string) {
 
 	// 询问是否确认
 	if !skipConfirm {
-		fmt.Print("是否使用此 commit message? (y/n): ")
+		fmt.Print(i18n.T("commit_confirm"))
 		var confirm string
 		fmt.Scanln(&confirm)
 		if confirm != "y" && confirm != "Y" {
-			fmt.Println("已取消")
+			fmt.Println(i18n.T("commit_cancelled"))
 			os.Exit(0)
 		}
 	}
@@ -226,10 +262,10 @@ func handleReview(client *llmhub.Client, cfg *config.Config, args []string) {
 	}
 
 	// 获取 commit 信息
-	fmt.Printf("正在分析 commit: %s...\n", commit)
+	fmt.Printf(i18n.T("review_analyzing")+"\n", commit)
 	commitInfo, err := git.GetCommitInfo(commit)
 	if err != nil {
-		fmt.Fprintf(os.Stderr, "错误: 无法获取 commit 信息: %v\n", err)
+		fmt.Fprintf(os.Stderr, "%s%s\n", i18n.T("error_prefix"), fmt.Sprintf(i18n.T("error_get_commit_info"), err))
 		os.Exit(1)
 	}
 
@@ -237,11 +273,11 @@ func handleReview(client *llmhub.Client, cfg *config.Config, args []string) {
 	ctx := context.Background()
 	review, err := reviewCommit(ctx, client, commitInfo)
 	if err != nil {
-		fmt.Fprintf(os.Stderr, "错误: 无法审查 commit: %v\n", err)
+		fmt.Fprintf(os.Stderr, "%s%s\n", i18n.T("error_prefix"), fmt.Sprintf(i18n.T("error_review_commit"), err))
 		os.Exit(1)
 	}
 
-	fmt.Printf("\n=== AI 审查结果 ===\n\n%s\n", review)
+	fmt.Printf("\n%s\n\n%s\n", i18n.T("review_result"), review)
 }
 
 func handleDiff(client *llmhub.Client, cfg *config.Config, args []string) {
@@ -263,7 +299,7 @@ func handleDiff(client *llmhub.Client, cfg *config.Config, args []string) {
 	}
 
 	if diff != "" {
-		fmt.Println("\n--- AI 解释 ---")
+		fmt.Println("\n" + i18n.T("diff_explanation"))
 		ctx := context.Background()
 		explanation, err := explainDiff(ctx, client, diff)
 		if err == nil {
@@ -278,32 +314,32 @@ func handleExplain(client *llmhub.Client, cfg *config.Config, args []string) {
 
 	if len(args) > 0 {
 		// 解释特定文件的变更
-		fmt.Printf("正在分析文件: %s...\n", args[0])
+		fmt.Printf(i18n.T("explain_analyzing_file")+"\n", args[0])
 		diff, err = git.GetFileDiff(args[0])
 	} else {
 		// 解释工作区的变更
-		fmt.Println("正在分析工作区变更...")
+		fmt.Println(i18n.T("explain_analyzing_workdir"))
 		diff, err = git.GetDiff()
 	}
 
 	if err != nil {
-		fmt.Fprintf(os.Stderr, "错误: 无法获取变更: %v\n", err)
+		fmt.Fprintf(os.Stderr, "%s%s\n", i18n.T("error_prefix"), fmt.Sprintf(i18n.T("error_get_changes"), err))
 		os.Exit(1)
 	}
 
 	if diff == "" {
-		fmt.Println("没有变更")
+		fmt.Println(i18n.T("explain_no_changes"))
 		os.Exit(0)
 	}
 
 	ctx := context.Background()
 	explanation, err := explainDiff(ctx, client, diff)
 	if err != nil {
-		fmt.Fprintf(os.Stderr, "错误: 无法生成解释: %v\n", err)
+		fmt.Fprintf(os.Stderr, "%s%s\n", i18n.T("error_prefix"), fmt.Sprintf(i18n.T("error_generate_explanation"), err))
 		os.Exit(1)
 	}
 
-	fmt.Printf("\n=== AI 解释 ===\n\n%s\n", explanation)
+	fmt.Printf("\n%s\n\n%s\n", i18n.T("explain_result"), explanation)
 }
 
 func handleGitCommand(args []string) {
@@ -320,7 +356,7 @@ func generateCommitMessage(ctx context.Context, client *llmhub.Client, diff stri
 	// 确定语言和提示词
 	languageInstruction := "Use English"
 	if lang == "zh" || lang == "cn" || lang == "chinese" {
-		languageInstruction = "使用中文"
+		languageInstruction = "Use Chinese"
 	}
 
 	prompt := fmt.Sprintf(`You are a professional Git commit message generator. Please generate a concise and clear commit message based on the following code changes.
@@ -351,7 +387,7 @@ Please return only the commit message, without any additional explanation.`, lan
 	}
 
 	if len(resp.Choices) == 0 {
-		return "", fmt.Errorf("没有收到响应")
+		return "", fmt.Errorf(i18n.T("error_no_response"))
 	}
 
 	message := strings.TrimSpace(getContent(resp.Choices[0].Message.Content))
@@ -391,18 +427,24 @@ Please return only the commit message, without any additional explanation.`, lan
 }
 
 func reviewCommit(ctx context.Context, client *llmhub.Client, commitInfo string) (string, error) {
-	prompt := fmt.Sprintf(`你是一个专业的代码审查助手。请审查以下 Git commit，提供详细的审查意见。
+	lang := i18n.GetLanguage()
+	languageInstruction := "Use English"
+	if lang == i18n.LangZH {
+		languageInstruction = "Use Chinese"
+	}
 
-要求：
-1. 使用中文
-2. 评估代码质量、潜在问题、最佳实践
-3. 提供建设性的建议
-4. 如果发现问题，请明确指出
+	prompt := fmt.Sprintf(`You are a professional code review assistant. Please review the following Git commit and provide detailed review comments.
 
-Commit 信息：
+Requirements:
+1. %s
+2. Evaluate code quality, potential issues, and best practices
+3. Provide constructive suggestions
+4. If issues are found, clearly point them out
+
+Commit information:
 %s
 
-请提供详细的审查报告。`, commitInfo)
+Please provide a detailed review report.`, languageInstruction, commitInfo)
 
 	resp, err := client.ChatCompletions(ctx, llmhub.ChatCompletionRequest{
 		Messages: []llmhub.ChatMessage{
@@ -416,25 +458,31 @@ Commit 信息：
 	}
 
 	if len(resp.Choices) == 0 {
-		return "", fmt.Errorf("没有收到响应")
+		return "", fmt.Errorf(i18n.T("error_no_response"))
 	}
 
 	return getContent(resp.Choices[0].Message.Content), nil
 }
 
 func explainDiff(ctx context.Context, client *llmhub.Client, diff string) (string, error) {
-	prompt := fmt.Sprintf(`你是一个专业的代码解释助手。请用通俗易懂的语言解释以下代码变更的含义。
+	lang := i18n.GetLanguage()
+	languageInstruction := "Use English"
+	if lang == i18n.LangZH {
+		languageInstruction = "Use Chinese"
+	}
 
-要求：
-1. 使用中文
-2. 解释变更的目的和影响
-3. 指出关键的变化点
-4. 如果可能，说明为什么这样修改
+	prompt := fmt.Sprintf(`You are a professional code explanation assistant. Please explain the meaning of the following code changes in plain language.
 
-代码变更：
+Requirements:
+1. %s
+2. Explain the purpose and impact of the changes
+3. Point out key changes
+4. If possible, explain why these changes were made
+
+Code changes:
 %s
 
-请提供清晰的解释。`, diff)
+Please provide a clear explanation.`, languageInstruction, diff)
 
 	resp, err := client.ChatCompletions(ctx, llmhub.ChatCompletionRequest{
 		Messages: []llmhub.ChatMessage{
@@ -448,7 +496,7 @@ func explainDiff(ctx context.Context, client *llmhub.Client, diff string) (strin
 	}
 
 	if len(resp.Choices) == 0 {
-		return "", fmt.Errorf("没有收到响应")
+		return "", fmt.Errorf(i18n.T("error_no_response"))
 	}
 
 	return getContent(resp.Choices[0].Message.Content), nil
