@@ -614,12 +614,15 @@ Code changes:
 `+"```"+`
 
 CRITICAL REQUIREMENTS:
-- Return ONLY ONE commit message
-- Do NOT provide multiple options or alternatives
+- Return EXACTLY ONE commit message, no more, no less
+- Do NOT provide multiple commit messages, even if you think there are multiple logical changes
+- Do NOT list multiple options or alternatives
 - Do NOT include any introductory text, explanations, or phrases like "Based on", "Here's", "For all changes", "Split into", "Alternative", etc.
 - Do NOT number your response (no "1.", "2.", "3.", etc.)
 - Start DIRECTLY with the commit message (e.g., "feat:", "fix:", etc.)
-- Return ONLY the commit message, nothing else`, languageInstruction, typeGuidance, diff)
+- If there are multiple changes, combine them into a SINGLE comprehensive commit message
+- Return ONLY the commit message itself, nothing else
+- Do NOT include multiple commit messages separated by blank lines or any other separator`, languageInstruction, typeGuidance, diff)
 	}
 
 	resp, err := client.ChatCompletions(ctx, llmhub.ChatCompletionRequest{
@@ -787,8 +790,12 @@ func cleanCommitMessage(message string) string {
 		lines = lines[startIdx:]
 	}
 
-	// 进一步清理：移除选项说明和解释性文字
+	// 进一步清理：移除选项说明和解释性文字，并确保只保留第一个 commit message
 	finalLines := []string{}
+	commitTypePattern := regexp.MustCompile(`^(feat|fix|docs|style|refactor|perf|test|build|ci|chore|revert)(\(.+?\))?:`)
+	foundFirstCommit := false
+	commitCount := 0
+
 	for _, line := range lines {
 		lineTrimmed := strings.TrimSpace(line)
 		lineLower := strings.ToLower(lineTrimmed)
@@ -804,6 +811,16 @@ func cleanCommitMessage(message string) string {
 		// 跳过数字开头的选项行
 		if matched, _ := regexp.MatchString(`^\d+\.`, lineTrimmed); matched {
 			continue
+		}
+
+		// 检测是否是 conventional commit 格式的开头
+		if commitTypePattern.MatchString(lineTrimmed) {
+			commitCount++
+			// 如果已经找到第一个 commit message，且这是第二个或更多，停止处理
+			if foundFirstCommit {
+				break
+			}
+			foundFirstCommit = true
 		}
 
 		// 跳过明显的解释性文字
@@ -829,7 +846,10 @@ func cleanCommitMessage(message string) string {
 			break
 		}
 
-		finalLines = append(finalLines, line)
+		// 只有在找到第一个 commit 后才添加行
+		if foundFirstCommit {
+			finalLines = append(finalLines, line)
+		}
 	}
 
 	// 移除末尾的代码块标记
