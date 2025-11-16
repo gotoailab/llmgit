@@ -1,3 +1,5 @@
+[[中文介绍]](https://github.com/gotoailab/llmgit/blob/main/README_CN.md)  |  [[Join Discord]](https://discord.gg/B3FwBSQq)
+
 # llmgit - AI-Enhanced Git Tool
 
 llmgit is a Git enhancement tool powered by large language models, providing an intelligent Git operation experience.
