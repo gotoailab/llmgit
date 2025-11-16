@@ -58,6 +58,9 @@ var enMessages = map[string]string{
 	"error":                 "Error",
 	"error_prefix":          "Error: ",
 
+	// Help command
+	"help_usage_desc":       "Show this help message",
+
 	// Init command
 	"init_usage":            "llmgit init <provider> <api-key> [model]",
 	"init_usage_desc":       "Initialize project configuration",
@@ -125,6 +128,9 @@ var zhMessages = map[string]string{
 	"examples":              "示例",
 	"error":                 "错误",
 	"error_prefix":          "错误: ",
+
+	// Help command
+	"help_usage_desc":       "显示帮助信息",
 
 	// Init command
 	"init_usage":            "llmgit init <provider> <api-key> [model]",

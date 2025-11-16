@@ -33,6 +33,12 @@ func main() {
 		return
 	}
 
+	// 帮助命令（不需要初始化）
+	if command == "help" || command == "--help" || command == "-h" {
+		printUsage()
+		return
+	}
+
 	// 列出所有支持的 provider（不需要初始化）
 	if command == "providers" || command == "list-providers" {
 		handleProviders()
@@ -102,6 +108,7 @@ func printUsage() {
 	fmt.Println(i18n.T("app_name"))
 	fmt.Println()
 	fmt.Printf("%s:\n", i18n.T("usage"))
+	fmt.Printf("  llmgit help  - %s\n", i18n.T("help_usage_desc"))
 	fmt.Printf("  %s  - %s\n", i18n.T("init_usage"), i18n.T("init_usage_desc"))
 	fmt.Printf("  %s  - %s\n", i18n.T("commit_usage"), i18n.T("commit_usage_desc"))
 	fmt.Printf("    %s  - %s\n", i18n.T("commit_lang_option"), i18n.T("commit_lang_desc"))
