@@ -142,3 +142,76 @@ func GetBranchCommits(baseBranch, targetBranch string) (string, error) {
 	return strings.TrimSpace(string(output)), nil
 }
 
+// FilterDiffExcludes 过滤 diff，排除指定的目录和文件
+// 默认排除 vendor/ 和 node_modules/
+func FilterDiffExcludes(diff string, excludePaths []string) string {
+	if diff == "" {
+		return ""
+	}
+
+	// 默认排除路径
+	defaultExcludes := []string{"vendor/", "node_modules/"}
+	if excludePaths == nil {
+		excludePaths = defaultExcludes
+	} else {
+		// 合并默认排除路径和用户指定的路径
+		excludeMap := make(map[string]bool)
+		for _, path := range defaultExcludes {
+			excludeMap[path] = true
+		}
+		for _, path := range excludePaths {
+			excludeMap[path] = true
+		}
+		excludePaths = make([]string, 0, len(excludeMap))
+		for path := range excludeMap {
+			excludePaths = append(excludePaths, path)
+		}
+	}
+
+	lines := strings.Split(diff, "\n")
+	var filteredLines []string
+	var skipFile bool
+
+	for _, line := range lines {
+		// 检查是否是文件头（以 "diff --git" 开头）
+		if strings.HasPrefix(line, "diff --git") {
+			// 提取文件路径
+			parts := strings.Fields(line)
+			if len(parts) >= 4 {
+				// 格式: diff --git a/path/to/file b/path/to/file
+				filePath := strings.TrimPrefix(parts[2], "a/")
+				skipFile = false
+
+				// 检查是否应该排除此文件
+				for _, excludePath := range excludePaths {
+					if strings.Contains(filePath, excludePath) {
+						skipFile = true
+						break
+					}
+				}
+			}
+
+			// 如果文件应该被跳过，不添加这一行，继续跳过后续行直到下一个文件
+			if skipFile {
+				continue
+			}
+		}
+
+		// 如果当前文件应该被跳过，跳过所有行直到下一个文件头
+		if skipFile {
+			// 检查是否是下一个文件头
+			if strings.HasPrefix(line, "diff --git") {
+				// 这是下一个文件，重新检查
+				continue
+			}
+			// 跳过当前行
+			continue
+		}
+
+		// 保留当前行
+		filteredLines = append(filteredLines, line)
+	}
+
+	return strings.Join(filteredLines, "\n")
+}
+

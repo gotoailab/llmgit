@@ -366,6 +366,9 @@ func (s *MCPServer) handleGenerateCommitMessage(ctx context.Context, args map[st
 		}, nil
 	}
 
+	// Filter out vendor and node_modules
+	diff = git.FilterDiffExcludes(diff, nil)
+
 	// Get staged files for type hint
 	files, err := git.GetStagedFiles()
 	if err != nil {

@@ -12,6 +12,13 @@ import (
 	"github.com/gotoailab/llmhub"
 )
 
+const (
+	// DefaultMaxFiles 默认最大文件数量
+	DefaultMaxFiles = 50
+	// DefaultMaxLines 默认最大代码行数
+	DefaultMaxLines = 5000
+)
+
 // AnalyzeChangeType analyzes changed file types and returns type suggestion
 func AnalyzeChangeType(files []string) string {
 	if len(files) == 0 {
@@ -113,6 +120,85 @@ func AnalyzeChangeType(files []string) string {
 	}
 
 	return ""
+}
+
+// LimitDiffSize 限制 diff 的大小，防止传输过多上下文
+// maxFiles: 最大文件数量，0 表示使用默认值
+// maxLines: 最大代码行数，0 表示使用默认值
+func LimitDiffSize(diff string, maxFiles, maxLines int) string {
+	if diff == "" {
+		return ""
+	}
+
+	// 使用默认值
+	if maxFiles <= 0 {
+		maxFiles = DefaultMaxFiles
+	}
+	if maxLines <= 0 {
+		maxLines = DefaultMaxLines
+	}
+
+	lines := strings.Split(diff, "\n")
+	var resultLines []string
+	var fileCount int
+	var codeLineCount int
+
+	for i, line := range lines {
+		// 检测文件头
+		if strings.HasPrefix(line, "diff --git") {
+			// 如果已经达到文件数量限制，停止处理
+			if fileCount >= maxFiles {
+				// 添加截断提示
+				if len(resultLines) > 0 {
+					resultLines = append(resultLines, fmt.Sprintf("\n... (truncated: reached file limit of %d files)", maxFiles))
+				}
+				break
+			}
+
+			// 提取文件路径
+			parts := strings.Fields(line)
+			if len(parts) >= 4 {
+				fileCount++
+			}
+			resultLines = append(resultLines, line)
+		} else if strings.HasPrefix(line, "--- a/") || strings.HasPrefix(line, "+++ b/") {
+			resultLines = append(resultLines, line)
+		} else if strings.HasPrefix(line, "@@") {
+			// 这是 hunk 头，包含行数信息
+			resultLines = append(resultLines, line)
+		} else if strings.HasPrefix(line, "+") || strings.HasPrefix(line, "-") {
+			// 这是代码行
+			codeLineCount++
+			if codeLineCount > maxLines {
+				// 达到行数限制，添加截断提示并停止
+				if len(resultLines) > 0 {
+					resultLines = append(resultLines, fmt.Sprintf("\n... (truncated: reached line limit of %d lines)", maxLines))
+				}
+				break
+			}
+			resultLines = append(resultLines, line)
+		} else {
+			// 其他行（如索引行、二进制文件提示等）
+			// 如果已经达到行数限制，不再添加
+			if codeLineCount >= maxLines {
+				// 检查是否还有更多文件
+				hasMoreFiles := false
+				for j := i + 1; j < len(lines); j++ {
+					if strings.HasPrefix(lines[j], "diff --git") {
+						hasMoreFiles = true
+						break
+					}
+				}
+				if hasMoreFiles {
+					resultLines = append(resultLines, fmt.Sprintf("\n... (truncated: reached line limit of %d lines)", maxLines))
+					break
+				}
+			}
+			resultLines = append(resultLines, line)
+		}
+	}
+
+	return strings.Join(resultLines, "\n")
 }
 
 // CleanCommitMessage removes introductory text and explanations from the commit message
@@ -298,6 +384,9 @@ func CleanCommitMessage(message string) string {
 
 // GenerateCommitMessage generates a commit message using AI
 func GenerateCommitMessage(ctx context.Context, client *llmhub.Client, diff string, lang string, cfg *config.Config, typeHint string) (string, error) {
+	// Limit diff size before processing
+	diff = LimitDiffSize(diff, DefaultMaxFiles, DefaultMaxLines)
+
 	// Determine language and prompt
 	languageInstruction := "Use English"
 	if lang == "zh" || lang == "cn" || lang == "chinese" {

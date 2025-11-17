@@ -67,6 +67,9 @@ func HandleCommit(client *llmhub.Client, cfg *config.Config, args []string) {
 		os.Exit(0)
 	}
 
+	// Filter out vendor and node_modules
+	diff = git.FilterDiffExcludes(diff, nil)
+
 	// Analyze changed file types for type suggestion
 	files, err := git.GetStagedFiles()
 	if err != nil {
