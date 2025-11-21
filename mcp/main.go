@@ -349,6 +349,12 @@ func (s *MCPServer) handleGenerateCommitMessage(ctx context.Context, args map[st
 		lang = langVal
 	}
 
+	// Get debug parameter
+	debug := false
+	if debugVal, ok := args["debug"].(bool); ok {
+		debug = debugVal
+	}
+
 	// Get staged changes
 	diff, err := git.GetStagedDiff()
 	if err != nil {
@@ -377,7 +383,7 @@ func (s *MCPServer) handleGenerateCommitMessage(ctx context.Context, args map[st
 	typeHint := ai.AnalyzeChangeType(files)
 
 	// Generate commit message
-	message, err := ai.GenerateCommitMessage(ctx, s.client, diff, lang, s.cfg, typeHint)
+	message, err := ai.GenerateCommitMessage(ctx, s.client, diff, lang, s.cfg, typeHint, debug)
 	if err != nil {
 		return nil, fmt.Errorf("failed to generate commit message: %w", err)
 	}

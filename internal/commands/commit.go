@@ -33,8 +33,9 @@ func HandleCommit(client *llmhub.Client, cfg *config.Config, args []string) {
 		return
 	}
 
-	// Parse language option (--lang or -l)
+	// Parse language option (--lang or -l) and debug option (--debug)
 	lang := "en" // Default English
+	debug := false
 	filteredArgs := []string{}
 	skipNext := false
 	for i, arg := range args {
@@ -50,6 +51,8 @@ func HandleCommit(client *llmhub.Client, cfg *config.Config, args []string) {
 			}
 		} else if strings.HasPrefix(arg, "--lang=") {
 			lang = strings.TrimPrefix(arg, "--lang=")
+		} else if arg == "--debug" {
+			debug = true
 		} else {
 			filteredArgs = append(filteredArgs, arg)
 		}
@@ -81,7 +84,7 @@ func HandleCommit(client *llmhub.Client, cfg *config.Config, args []string) {
 	// Use AI to generate commit message
 	fmt.Println(i18n.T("commit_generating"))
 	ctx := context.Background()
-	message, err := ai.GenerateCommitMessage(ctx, client, diff, lang, cfg, typeHint)
+	message, err := ai.GenerateCommitMessage(ctx, client, diff, lang, cfg, typeHint, debug)
 	if err != nil {
 		fmt.Fprintf(os.Stderr, "%s%s\n", i18n.T("error_prefix"), fmt.Sprintf(i18n.T("error_generate_message"), err))
 		os.Exit(1)

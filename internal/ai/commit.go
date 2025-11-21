@@ -544,7 +544,7 @@ CRITICAL REQUIREMENTS:
 
 // GenerateCommitMessage generates a commit message using AI
 // It will retry up to MaxRetries times if the result is invalid
-func GenerateCommitMessage(ctx context.Context, client *llmhub.Client, diff string, lang string, cfg *config.Config, typeHint string) (string, error) {
+func GenerateCommitMessage(ctx context.Context, client *llmhub.Client, diff string, lang string, cfg *config.Config, typeHint string, debug bool) (string, error) {
 	// Limit diff size before processing
 	diff = LimitDiffSize(diff, DefaultMaxFiles, DefaultMaxLines)
 
@@ -567,6 +567,13 @@ func GenerateCommitMessage(ctx context.Context, client *llmhub.Client, diff stri
 		// 检查消息是否有效
 		if isValidCommitMessage(message) {
 			return message, nil
+		}
+
+		// 如果无效且开启了 debug 模式，打印无效的消息
+		if debug {
+			fmt.Println("=== DEBUG: Invalid commit message (attempt", attempt+1, ") ===")
+			fmt.Println(message)
+			fmt.Println("=== END DEBUG ===")
 		}
 
 		// 如果无效且不是最后一次尝试，继续重试
